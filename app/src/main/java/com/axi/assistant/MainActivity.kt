@@ -3,6 +3,7 @@ package com.axi.assistant
 
 import android.app.Activity
 import android.os.Bundle
+import android.os.Build
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.Manifest
@@ -27,6 +28,12 @@ class MainActivity : Activity() {
 
     private var selectedLocale = Locale("ta", "IN")
     private var ttsReady = false
+
+    companion object {
+        private const val REQUEST_MIC = 100
+        private const val REQUEST_BACKGROUND_MIC = 101
+        private const val REQUEST_NOTIFICATIONS = 102
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -61,10 +68,29 @@ class MainActivity : Activity() {
             gravity = Gravity.CENTER
         }
 
-        val tamilButton = Button(this).apply { text = "தமிழ்" }
-        val englishButton = Button(this).apply { text = "English" }
-        val micButton = Button(this).apply { text = "🎤 Speak to AXI" }
-        val speakButton = Button(this).apply { text = "🔊 AXI Speak" }
+        val tamilButton = Button(this).apply {
+            text = "தமிழ்"
+        }
+
+        val englishButton = Button(this).apply {
+            text = "English"
+        }
+
+        val micButton = Button(this).apply {
+            text = "🎤 Speak to AXI"
+        }
+
+        val speakButton = Button(this).apply {
+            text = "🔊 AXI Speak"
+        }
+
+        val backgroundStartButton = Button(this).apply {
+            text = "🎙️ Start Background Voice"
+        }
+
+        val backgroundStopButton = Button(this).apply {
+            text = "⏹ Stop Background Voice"
+        }
 
         layout.addView(title)
         layout.addView(statusText)
@@ -73,11 +99,17 @@ class MainActivity : Activity() {
         layout.addView(englishButton)
         layout.addView(micButton)
         layout.addView(speakButton)
-        setContentView(layout)
+        layout.addView(backgroundStartButton)
+        layout.addView(backgroundStopButton)
+
+        val scrollView = ScrollView(this)
+        scrollView.addView(layout)
+        setContentView(scrollView)
 
         tts = TextToSpeech(this) { result ->
             if (result == TextToSpeech.SUCCESS) {
                 val languageResult = tts.setLanguage(selectedLocale)
+
                 ttsReady =
                     languageResult != TextToSpeech.LANG_MISSING_DATA &&
                     languageResult != TextToSpeech.LANG_NOT_SUPPORTED
@@ -157,7 +189,8 @@ class MainActivity : Activity() {
                 }
             )
         } else {
-            statusText.text = "Speech recognition not available on this device."
+            statusText.text =
+                "Speech recognition not available on this device."
         }
 
         tamilButton.setOnClickListener {
@@ -185,14 +218,93 @@ class MainActivity : Activity() {
                 speak("Hello! I am AXI. How can I help you?")
             }
         }
+
+        backgroundStartButton.setOnClickListener {
+            startBackgroundVoice()
+        }
+
+        backgroundStopButton.setOnClickListener {
+            stopBackgroundVoice()
+        }
     }
 
     private fun updateTtsLanguage() {
         if (::tts.isInitialized && ttsReady) {
             val result = tts.setLanguage(selectedLocale)
+
             ttsReady =
                 result != TextToSpeech.LANG_MISSING_DATA &&
                 result != TextToSpeech.LANG_NOT_SUPPORTED
+        }
+    }
+
+    private fun startBackgroundVoice() {
+        if (checkSelfPermission(Manifest.permission.RECORD_AUDIO)
+            != PackageManager.PERMISSION_GRANTED
+        ) {
+            requestPermissions(
+                arrayOf(Manifest.permission.RECORD_AUDIO),
+                REQUEST_BACKGROUND_MIC
+            )
+            return
+        }
+
+        if (Build.VERSION.SDK_INT >= 33 &&
+            checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS)
+            != PackageManager.PERMISSION_GRANTED
+        ) {
+            requestPermissions(
+                arrayOf(Manifest.permission.POST_NOTIFICATIONS),
+                REQUEST_NOTIFICATIONS
+            )
+            return
+        }
+
+        launchBackgroundService()
+    }
+
+    private fun launchBackgroundService() {
+        val serviceIntent = Intent(
+            this,
+            AxiVoiceService::class.java
+        ).apply {
+            putExtra(
+                AxiVoiceService.EXTRA_LANGUAGE,
+                selectedLocale.toLanguageTag()
+            )
+        }
+
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                startForegroundService(serviceIntent)
+            } else {
+                startService(serviceIntent)
+            }
+
+            statusText.text =
+                if (selectedLocale.language == "ta")
+                    "AXI பின்னணியில் தொடங்கப்பட்டது."
+                else "AXI background voice started."
+
+        } catch (_: Exception) {
+            statusText.text =
+                "Couldn't start background voice. Please try again."
+        }
+    }
+
+    private fun stopBackgroundVoice() {
+        try {
+            stopService(
+                Intent(this, AxiVoiceService::class.java)
+            )
+
+            statusText.text =
+                if (selectedLocale.language == "ta")
+                    "AXI பின்னணி குரல் நிறுத்தப்பட்டது."
+                else "AXI background voice stopped."
+
+        } catch (_: Exception) {
+            statusText.text = "Couldn't stop background voice."
         }
     }
 
@@ -328,7 +440,7 @@ class MainActivity : Activity() {
         ) {
             requestPermissions(
                 arrayOf(Manifest.permission.RECORD_AUDIO),
-                100
+                REQUEST_MIC
             )
             return
         }
@@ -378,16 +490,36 @@ class MainActivity : Activity() {
             grantResults
         )
 
-        if (requestCode == 100 &&
+        val granted =
             grantResults.isNotEmpty() &&
             grantResults[0] == PackageManager.PERMISSION_GRANTED
-        ) {
-            startListening()
-        } else if (requestCode == 100) {
-            statusText.text =
-                if (selectedLocale.language == "ta")
-                    "மைக்ரோஃபோன் அனுமதி தேவை."
-                else "Microphone permission is required."
+
+        when (requestCode) {
+            REQUEST_MIC -> {
+                if (granted) {
+                    startListening()
+                } else {
+                    statusText.text = "Microphone permission is required."
+                }
+            }
+
+            REQUEST_BACKGROUND_MIC -> {
+                if (granted) {
+                    startBackgroundVoice()
+                } else {
+                    statusText.text =
+                        "Microphone permission is required for background voice."
+                }
+            }
+
+            REQUEST_NOTIFICATIONS -> {
+                if (granted) {
+                    launchBackgroundService()
+                } else {
+                    statusText.text =
+                        "Notification permission is needed to start AXI background voice."
+                }
+            }
         }
     }
 
