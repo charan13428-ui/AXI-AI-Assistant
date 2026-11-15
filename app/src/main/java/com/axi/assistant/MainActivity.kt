@@ -6,6 +6,7 @@ import android.os.Bundle
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.Manifest
+import android.provider.Settings
 import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
 import android.speech.RecognitionListener
@@ -13,6 +14,8 @@ import android.speech.tts.TextToSpeech
 import android.view.Gravity
 import android.widget.*
 import android.graphics.Color
+import java.text.DateFormat
+import java.util.Date
 import java.util.Locale
 
 class MainActivity : Activity() {
@@ -23,6 +26,7 @@ class MainActivity : Activity() {
     private lateinit var tts: TextToSpeech
 
     private var selectedLocale = Locale("ta", "IN")
+    private var ttsReady = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -36,35 +40,31 @@ class MainActivity : Activity() {
         layout.setPadding(32, 32, 32, 32)
         layout.setBackgroundColor(Color.rgb(15, 15, 25))
 
-        val title = TextView(this)
-        title.text = "AXI AI ASSISTANT 🚀"
-        title.textSize = 28f
-        title.setTextColor(Color.WHITE)
-        title.gravity = Gravity.CENTER
+        val title = TextView(this).apply {
+            text = "AXI AI ASSISTANT 🚀"
+            textSize = 28f
+            setTextColor(Color.WHITE)
+            gravity = Gravity.CENTER
+        }
 
-        statusText = TextView(this)
-        statusText.text = "Vanakkam! I am AXI."
-        statusText.textSize = 18f
-        statusText.setTextColor(Color.LTGRAY)
-        statusText.gravity = Gravity.CENTER
+        statusText = TextView(this).apply {
+            text = "Vanakkam! I am AXI."
+            textSize = 18f
+            setTextColor(Color.LTGRAY)
+            gravity = Gravity.CENTER
+        }
 
-        resultText = TextView(this)
-        resultText.text = "Tamil + English Voice Assistant"
-        resultText.textSize = 20f
-        resultText.setTextColor(Color.WHITE)
-        resultText.gravity = Gravity.CENTER
+        resultText = TextView(this).apply {
+            text = "Tamil + English Voice Assistant"
+            textSize = 20f
+            setTextColor(Color.WHITE)
+            gravity = Gravity.CENTER
+        }
 
-        val tamilButton = Button(this)
-        tamilButton.text = "தமிழ்"
-
-        val englishButton = Button(this)
-        englishButton.text = "English"
-
-        val micButton = Button(this)
-        micButton.text = "🎤 Speak to AXI"
-
-        val speakButton = Button(this)
-        speakButton.text = "🔊 AXI Speak"
+        val tamilButton = Button(this).apply { text = "தமிழ்" }
+        val englishButton = Button(this).apply { text = "English" }
+        val micButton = Button(this).apply { text = "🎤 Speak to AXI" }
+        val speakButton = Button(this).apply { text = "🔊 AXI Speak" }
 
         layout.addView(title)
         layout.addView(statusText)
@@ -73,12 +73,21 @@ class MainActivity : Activity() {
         layout.addView(englishButton)
         layout.addView(micButton)
         layout.addView(speakButton)
-
         setContentView(layout)
 
         tts = TextToSpeech(this) { result ->
             if (result == TextToSpeech.SUCCESS) {
-                tts.language = selectedLocale
+                val languageResult = tts.setLanguage(selectedLocale)
+                ttsReady =
+                    languageResult != TextToSpeech.LANG_MISSING_DATA &&
+                    languageResult != TextToSpeech.LANG_NOT_SUPPORTED
+
+                if (!ttsReady) {
+                    statusText.text =
+                        "Install the selected voice language in Android Text-to-Speech settings."
+                }
+            } else {
+                statusText.text = "Text-to-speech is unavailable."
             }
         }
 
@@ -89,15 +98,24 @@ class MainActivity : Activity() {
                 object : RecognitionListener {
 
                     override fun onReadyForSpeech(params: Bundle?) {
-                        statusText.text = "Listening..."
+                        statusText.text =
+                            if (selectedLocale.language == "ta")
+                                "கேட்கிறது..."
+                            else "Listening..."
                     }
 
                     override fun onBeginningOfSpeech() {
-                        statusText.text = "Speak now..."
+                        statusText.text =
+                            if (selectedLocale.language == "ta")
+                                "பேசுங்கள்..."
+                            else "Speak now..."
                     }
 
                     override fun onEndOfSpeech() {
-                        statusText.text = "Processing..."
+                        statusText.text =
+                            if (selectedLocale.language == "ta")
+                                "புரிந்துகொள்கிறேன்..."
+                            else "Processing..."
                     }
 
                     override fun onResults(results: Bundle?) {
@@ -105,20 +123,31 @@ class MainActivity : Activity() {
                             SpeechRecognizer.RESULTS_RECOGNITION
                         )
 
-                        val spokenText = matches?.firstOrNull() ?: ""
+                        val spokenText =
+                            matches?.firstOrNull()?.trim().orEmpty()
 
                         resultText.text = spokenText
-                        statusText.text = "AXI heard you!"
 
-                        if (selectedLocale.language == "ta") {
-                            speak("நான் கேட்டேன். வணக்கம்!")
+                        if (spokenText.isBlank()) {
+                            statusText.text =
+                                if (selectedLocale.language == "ta")
+                                    "மீண்டும் முயற்சிக்கவும்."
+                                else "I couldn't hear that. Please try again."
                         } else {
-                            speak("I heard you. Hello!")
+                            statusText.text =
+                                if (selectedLocale.language == "ta")
+                                    "AXI பதிலளிக்கிறது..."
+                                else "AXI is responding..."
+
+                            handleCommand(spokenText)
                         }
                     }
 
                     override fun onError(error: Int) {
-                        statusText.text = "Try speaking again."
+                        statusText.text =
+                            if (selectedLocale.language == "ta")
+                                "குரலை புரிந்துகொள்ள முடியவில்லை. மீண்டும் முயற்சிக்கவும்."
+                            else "Couldn't recognise that. Please try again."
                     }
 
                     override fun onRmsChanged(rmsdB: Float) {}
@@ -128,21 +157,21 @@ class MainActivity : Activity() {
                 }
             )
         } else {
-            statusText.text = "Speech recognition not available"
+            statusText.text = "Speech recognition not available on this device."
         }
 
         tamilButton.setOnClickListener {
             selectedLocale = Locale("ta", "IN")
-            tts.language = selectedLocale
-            statusText.text = "Tamil selected"
-            speak("வணக்கம்")
+            updateTtsLanguage()
+            statusText.text = "தமிழ் தேர்ந்தெடுக்கப்பட்டது"
+            speak("வணக்கம்! நான் AXI.")
         }
 
         englishButton.setOnClickListener {
             selectedLocale = Locale("en", "IN")
-            tts.language = selectedLocale
+            updateTtsLanguage()
             statusText.text = "English selected"
-            speak("Hello, I am AXI")
+            speak("Hello! I am AXI.")
         }
 
         micButton.setOnClickListener {
@@ -151,11 +180,141 @@ class MainActivity : Activity() {
 
         speakButton.setOnClickListener {
             if (selectedLocale.language == "ta") {
-                speak("வணக்கம்! நான் AXI.")
+                speak("வணக்கம்! நான் AXI. உங்களுக்கு எப்படி உதவலாம்?")
             } else {
-                speak("Hello! I am AXI, your assistant.")
+                speak("Hello! I am AXI. How can I help you?")
             }
         }
+    }
+
+    private fun updateTtsLanguage() {
+        if (::tts.isInitialized && ttsReady) {
+            val result = tts.setLanguage(selectedLocale)
+            ttsReady =
+                result != TextToSpeech.LANG_MISSING_DATA &&
+                result != TextToSpeech.LANG_NOT_SUPPORTED
+        }
+    }
+
+    private fun handleCommand(originalText: String) {
+        val text = originalText.lowercase(Locale.ROOT)
+        val isTamil = selectedLocale.language == "ta"
+
+        val response: String
+
+        when {
+            text.contains("open settings") ||
+            text.contains("settings") ||
+            text.contains("அமைப்புகள்") ||
+            text.contains("செட்டிங்ஸ்") -> {
+
+                response =
+                    if (isTamil)
+                        "தொலைபேசி அமைப்புகளைத் திறக்கிறேன்."
+                    else "Opening your phone settings."
+
+                speak(response)
+
+                try {
+                    startActivity(Intent(Settings.ACTION_SETTINGS))
+                } catch (_: Exception) {
+                    statusText.text =
+                        if (isTamil)
+                            "அமைப்புகளைத் திறக்க முடியவில்லை."
+                        else "Couldn't open settings."
+                }
+                return
+            }
+
+            text.contains("time") ||
+            text.contains("நேரம்") ||
+            text.contains("மணி") -> {
+
+                val time = DateFormat.getTimeInstance(
+                    DateFormat.SHORT,
+                    selectedLocale
+                ).format(Date())
+
+                response =
+                    if (isTamil) "இப்போது நேரம் $time."
+                    else "The time is $time."
+            }
+
+            text.contains("date") ||
+            text.contains("today") ||
+            text.contains("தேதி") ||
+            text.contains("இன்று") -> {
+
+                val date = DateFormat.getDateInstance(
+                    DateFormat.LONG,
+                    selectedLocale
+                ).format(Date())
+
+                response =
+                    if (isTamil) "இன்றைய தேதி $date."
+                    else "Today's date is $date."
+            }
+
+            text.contains("hello") ||
+            text.contains("hi") ||
+            text.contains("வணக்கம்") ||
+            text.contains("ஹலோ") ||
+            text.contains("vanakkam") -> {
+
+                response =
+                    if (isTamil)
+                        "வணக்கம்! இன்று நான் உங்களுக்கு எப்படி உதவலாம்?"
+                    else "Hello! How can I help you today?"
+            }
+
+            text.contains("your name") ||
+            text.contains("who are you") ||
+            text.contains("உன் பெயர்") ||
+            text.contains("நீ யார்") -> {
+
+                response =
+                    if (isTamil)
+                        "என் பெயர் AXI. நான் உங்கள் தமிழ் மற்றும் ஆங்கில குரல் உதவியாளர்."
+                    else
+                        "My name is AXI. I am your Tamil and English voice assistant."
+            }
+
+            text.contains("what can you do") ||
+            text.contains("help") ||
+            text.contains("என்ன செய்ய") ||
+            text.contains("உதவி") -> {
+
+                response =
+                    if (isTamil)
+                        "நான் வணக்கம் சொல்லலாம், நேரம் மற்றும் தேதியைச் சொல்லலாம், தொலைபேசி அமைப்புகளைத் திறக்கலாம். இன்னும் பல அம்சங்கள் உருவாக்கப்பட்டுக் கொண்டிருக்கின்றன."
+                    else
+                        "I can respond to greetings, tell you the time and date, and open phone settings. More features are still being developed."
+            }
+
+            text.contains("thank you") ||
+            text.contains("thanks") ||
+            text.contains("நன்றி") -> {
+
+                response =
+                    if (isTamil)
+                        "மகிழ்ச்சி! வேறு ஏதாவது உதவி வேண்டுமா?"
+                    else "You're welcome! What else can I help with?"
+            }
+
+            else -> {
+                response =
+                    if (isTamil)
+                        "இந்தக் கேள்விக்கான பதில் இன்னும் எனக்குத் தெரியாது. தற்போது வணக்கம், நேரம், தேதி மற்றும் அமைப்புகள் போன்ற கட்டளைகளை முயற்சிக்கலாம்."
+                    else
+                        "I don't know the answer to that yet. For now, try asking the time or date, saying hello, or asking me to open settings."
+            }
+        }
+
+        statusText.text =
+            if (isTamil) "AXI பதிலளித்தது"
+            else "AXI replied"
+
+        speak(response)
     }
 
     private fun startListening() {
@@ -174,24 +333,38 @@ class MainActivity : Activity() {
             return
         }
 
-        val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH)
+        val intent = Intent(
+            RecognizerIntent.ACTION_RECOGNIZE_SPEECH
+        ).apply {
+            putExtra(
+                RecognizerIntent.EXTRA_LANGUAGE_MODEL,
+                RecognizerIntent.LANGUAGE_MODEL_FREE_FORM
+            )
 
-        intent.putExtra(
-            RecognizerIntent.EXTRA_LANGUAGE_MODEL,
-            RecognizerIntent.LANGUAGE_MODEL_FREE_FORM
-        )
+            putExtra(
+                RecognizerIntent.EXTRA_LANGUAGE,
+                selectedLocale.toLanguageTag()
+            )
 
-        intent.putExtra(
-            RecognizerIntent.EXTRA_LANGUAGE,
-            selectedLocale.toLanguageTag()
-        )
+            putExtra(
+                RecognizerIntent.EXTRA_LANGUAGE_PREFERENCE,
+                selectedLocale.toLanguageTag()
+            )
 
-        intent.putExtra(
-            RecognizerIntent.EXTRA_PARTIAL_RESULTS,
-            true
-        )
+            putExtra(
+                RecognizerIntent.EXTRA_PARTIAL_RESULTS,
+                false
+            )
+        }
 
-        speechRecognizer.startListening(intent)
+        try {
+            speechRecognizer.startListening(intent)
+        } catch (_: Exception) {
+            statusText.text =
+                if (selectedLocale.language == "ta")
+                    "குரல் சேவையைத் தொடங்க முடியவில்லை."
+                else "Couldn't start voice recognition."
+        }
     }
 
     override fun onRequestPermissionsResult(
@@ -210,23 +383,31 @@ class MainActivity : Activity() {
             grantResults[0] == PackageManager.PERMISSION_GRANTED
         ) {
             startListening()
-        } else {
-            statusText.text = "Microphone permission required"
+        } else if (requestCode == 100) {
+            statusText.text =
+                if (selectedLocale.language == "ta")
+                    "மைக்ரோஃபோன் அனுமதி தேவை."
+                else "Microphone permission is required."
         }
     }
 
     private fun speak(message: String) {
-        tts.speak(
-            message,
-            TextToSpeech.QUEUE_FLUSH,
-            null,
-            "AXI_SPEECH"
-        )
+        if (::tts.isInitialized && ttsReady) {
+            tts.speak(
+                message,
+                TextToSpeech.QUEUE_FLUSH,
+                null,
+                "AXI_SPEECH"
+            )
+        } else {
+            statusText.text =
+                if (selectedLocale.language == "ta")
+                    "குரல் வசதி தயாராகவில்லை. TTS மொழியைச் சரிபார்க்கவும்."
+                else "Voice output isn't ready. Check your Text-to-Speech language."
+        }
     }
 
     override fun onDestroy() {
-        super.onDestroy()
-
         if (::speechRecognizer.isInitialized) {
             speechRecognizer.destroy()
         }
@@ -235,5 +416,7 @@ class MainActivity : Activity() {
             tts.stop()
             tts.shutdown()
         }
+
+        super.onDestroy()
     }
 }
