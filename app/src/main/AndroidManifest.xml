@@ -1,10 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <uses-permission android:name="android.permission.READ_CONTACTS" />
+    <!-- Microphone permission -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+
+    <!-- Internet permission -->
     <uses-permission android:name="android.permission.INTERNET" />
+
+    <!-- Contacts permission -->
+    <uses-permission android:name="android.permission.READ_CONTACTS" />
+
+    <!-- Foreground service permissions -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
+
+    <!-- Notification permission -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <application
@@ -15,10 +25,12 @@
         <activity
             android:name="com.axi.assistant.MainActivity"
             android:exported="true">
+
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+
         </activity>
 
         <service
@@ -28,4 +40,5 @@
             android:foregroundServiceType="microphone" />
 
     </application>
+
 </manifest>
