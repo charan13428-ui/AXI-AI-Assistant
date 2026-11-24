@@ -1,4 +1,9 @@
-const { app, BrowserWindow } = require('electron');
-const path = require('path');
-function createWindow(){ const win=new BrowserWindow({width:1100,height:760,minWidth:850,minHeight:600,backgroundColor:'#030712',title:'JARVIS',webPreferences:{preload:path.join(__dirname,'preload.js'),contextIsolation:true}}); win.loadFile('index.html'); }
-app.whenReady().then(createWindow); app.on('window-all-closed',()=>{if(process.platform!=='darwin') app.quit();});
+const { app, BrowserWindow, ipcMain, safeStorage } = require('electron');
+const path=require('path'), fs=require('fs');
+function createWindow(){const win=new BrowserWindow({width:1100,height:760,minWidth:850,minHeight:600,backgroundColor:'#030712',title:'JARVIS',webPreferences:{preload:path.join(__dirname,'preload.js'),contextIsolation:true,nodeIntegration:false}});win.loadFile('index.html');}
+const configPath=()=>path.join(app.getPath('userData'),'ai-key.enc');
+ipcMain.handle('key-status',()=>({configured:fs.existsSync(configPath())}));
+ipcMain.handle('save-key',(_,key)=>{if(!safeStorage.isEncryptionAvailable())throw new Error('Secure storage is unavailable on this Windows system.');fs.writeFileSync(configPath(),safeStorage.encryptString(key.trim()));return {ok:true};});
+ipcMain.handle('clear-key',()=>{if(fs.existsSync(configPath()))fs.unlinkSync(configPath());return {ok:true};});
+ipcMain.handle('ai-chat',async(_,prompt)=>{if(!fs.existsSync(configPath()))throw new Error('AI is not configured. Add your API key in Settings.');const key=safeStorage.decryptString(fs.readFileSync(configPath()));const res=await fetch('https://api.openai.com/v1/chat/completions',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},body:JSON.stringify({model:'gpt-4o-mini',messages:[{role:'system',content:'You are JARVIS, a helpful desktop assistant. Be concise and clear. You cannot directly control the computer unless the app explicitly provides that action.'},{role:'user',content:prompt}],max_tokens:700})});const data=await res.json();if(!res.ok)throw new Error(data.error?.message||'AI request failed');return data.choices?.[0]?.message?.content||'No response received.';});
+app.whenReady().then(createWindow);app.on('window-all-closed',()=>{if(process.platform!=='darwin')app.quit();});
