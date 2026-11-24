@@ -1,1 +1,1 @@
-const {contextBridge }=require('electron'); contextBridge.exposeInMainWorld('jarvisDesktop',{platform:'desktop'});
+const {contextBridge,ipcRenderer}=require('electron');contextBridge.exposeInMainWorld('jarvisDesktop',{platform:'desktop',keyStatus:()=>ipcRenderer.invoke('key-status'),saveKey:k=>ipcRenderer.invoke('save-key',k),clearKey:()=>ipcRenderer.invoke('clear-key'),chat:p=>ipcRenderer.invoke('ai-chat',p)});
