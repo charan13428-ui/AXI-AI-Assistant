@@ -121,24 +121,24 @@ class AxiVoiceService : Service() {
                 handler.postDelayed({ launchIntent(i) }, 500); return
             }
         }
-        val appMap = listOf(
-            "youtube" to "com.google.android.youtube", "whatsapp" to "com.whatsapp",
-            "chrome" to "com.android.chrome", "instagram" to "com.instagram.android",
-            "facebook" to "com.facebook.katana", "maps" to "com.google.android.apps.maps",
-            "google maps" to "com.google.android.apps.maps", "gmail" to "com.google.android.gm",
-            "camera" to "com.android.camera", "calculator" to "com.android.calculator2",
-            "play store" to "com.android.vending", "spotify" to "com.spotify.music",
-            "telegram" to "org.telegram.messenger", "phone" to "com.google.android.dialer",
-            "messages" to "com.google.android.apps.messaging"
-        )
-        val target = appMap.firstOrNull { (name, _) -> w.contains("open $name") || w == name || w.contains("launch $name") }
-        if (target != null) {
-            val launch = packageManager.getLaunchIntentForPackage(target.second)
-            if (launch != null) {
-                speak(if (tamil) "செயலியை திறக்கிறேன்." else "Opening ${target.first}.")
-                handler.postDelayed({ launchIntent(launch) }, 500)
-            } else speak(if (tamil) "அந்த செயலி நிறுவப்படவில்லை." else "${target.first} isn't installed.")
-            return
+        // Resolve installed launchable apps by their visible app names.
+        val cleaned = w.replace(Regex("^(open|launch|start)\\s+"), "").trim()
+        if (cleaned.isNotBlank()) {
+            val launcherQuery = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER)
+            val matches = packageManager.queryIntentActivities(launcherQuery, 0)
+            val app = matches.firstOrNull { info ->
+                val label = info.loadLabel(packageManager)?.toString()?.lowercase(Locale.ROOT).orEmpty()
+                label == cleaned || label.contains(cleaned)
+            }
+            if (app != null) {
+                val launch = packageManager.getLaunchIntentForPackage(app.activityInfo.packageName)
+                if (launch != null) {
+                    val label = app.loadLabel(packageManager).toString()
+                    speak(if (tamil) "$label செயலியை திறக்கிறேன்." else "Opening $label.")
+                    handler.postDelayed({ launchIntent(launch) }, 500)
+                    return
+                }
+            }
         }
         speak(if (tamil) "கட்டளையை கேட்டேன். இந்த அம்சத்திற்கு இணைய AI இணைப்பு தேவை." else "I heard you. General AI answers require an AI connection, which isn't configured yet.")
     }
