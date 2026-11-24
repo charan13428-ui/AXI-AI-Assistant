@@ -15,7 +15,7 @@ class AxiVoiceService : Service() {
     companion object {
         const val ACTION_STOP = "com.axi.assistant.STOP"
         const val EXTRA_LANGUAGE = "axi_language"
-        private const val CHANNEL = "axi_voice"
+        private const val CHANNEL = "jarvis_voice"
         private const val NOTIFICATION_ID = 4101
     }
     private val handler = Handler(Looper.getMainLooper())
@@ -91,7 +91,7 @@ class AxiVoiceService : Service() {
         val w = raw.lowercase(Locale.ROOT)
         val tamil = language.startsWith("ta")
         if (w.contains("stop listening") || w.contains("stop axi") || w.contains("நிறுத்து")) {
-            speak(if (tamil) "சரி. நிறுத்துகிறேன்." else "Okay, stopping AXI.")
+            speak(if (tamil) "சரி. நிறுத்துகிறேன்." else "Okay, stopping JARVIS.")
             handler.postDelayed({ stopSession() }, 1400); return
         }
         if (w.contains("settings") || w.contains("அமைப்புகள்")) {
@@ -105,10 +105,10 @@ class AxiVoiceService : Service() {
             speak((if (tamil) "இன்றைய தேதி " else "Today's date is ") + DateFormat.getDateInstance(DateFormat.LONG, Locale.forLanguageTag(language)).format(Date())); return
         }
         if (w.contains("hello") || w.contains("hi") || w.contains("வணக்கம்")) {
-            speak(if (tamil) "வணக்கம்! நான் AXI. எப்படி உதவலாம்?" else "Hello! I'm AXI. How can I help?"); return
+            speak(if (tamil) "வணக்கம்! நான் JARVIS. எப்படி உதவலாம்?" else "Hello! I'm JARVIS. How can I help?"); return
         }
         if (w.contains("who are you") || w.contains("your name") || w.contains("நீ யார்")) {
-            speak(if (tamil) "நான் AXI, உங்கள் குரல் உதவியாளர்." else "I'm AXI, your voice assistant."); return
+            speak(if (tamil) "நான் JARVIS, உங்கள் குரல் உதவியாளர்." else "I'm JARVIS, your voice assistant."); return
         }
         if (w.contains("help") || w.contains("what can you do")) {
             speak(if (tamil) "செயலிகளை திறக்கவும், நேரம், தேதி, அமைப்புகள் மற்றும் இணைய தேடல் கட்டளைகளை முயற்சிக்கவும்." else "Try opening apps, asking for the time or date, opening Settings, or searching the web."); return
@@ -147,18 +147,18 @@ class AxiVoiceService : Service() {
         try { i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK); startActivity(i) } catch (_: Exception) { scheduleListening(900) }
     }
     private fun speak(message: String) {
-        if (ttsReady) tts?.speak(message, TextToSpeech.QUEUE_FLUSH, null, "AXI_REPLY")
+        if (ttsReady) tts?.speak(message, TextToSpeech.QUEUE_FLUSH, null, "JARVIS_REPLY")
         else scheduleListening(900)
     }
     private fun createChannel() {
         if (Build.VERSION.SDK_INT >= 26) {
-            getSystemService(NotificationManager::class.java).createNotificationChannel(NotificationChannel(CHANNEL, "AXI background voice", NotificationManager.IMPORTANCE_LOW))
+            getSystemService(NotificationManager::class.java).createNotificationChannel(NotificationChannel(CHANNEL, "JARVIS background voice", NotificationManager.IMPORTANCE_LOW))
         }
     }
     private fun makeNotification(): Notification {
         val stopIntent = PendingIntent.getService(this, 2, Intent(this, AxiVoiceService::class.java).setAction(ACTION_STOP), PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
         val b = if (Build.VERSION.SDK_INT >= 26) Notification.Builder(this, CHANNEL) else @Suppress("DEPRECATION") Notification.Builder(this)
-        return b.setSmallIcon(android.R.drawable.ic_btn_speak_now).setContentTitle("AXI voice is active").setContentText("Listening. Tap Stop to end.").setOngoing(true).addAction(android.R.drawable.ic_media_pause, "Stop", stopIntent).build()
+        return b.setSmallIcon(android.R.drawable.ic_btn_speak_now).setContentTitle("JARVIS voice is active").setContentText("Listening. Tap Stop to end.").setOngoing(true).addAction(android.R.drawable.ic_media_pause, "Stop", stopIntent).build()
     }
     private fun stopSession() {
         stopping = true; handler.removeCallbacksAndMessages(null)
