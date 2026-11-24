@@ -60,7 +60,7 @@ class MainActivity : Activity() {
                 setPadding(12,12,12,12)
             }
         }
-        fun addGap(height: Int) { layout.addView(View(this).apply { setBackgroundColor(Color.TRANSPARENT }, LinearLayout.LayoutParams(1,height)) }
+        fun addGap(height: Int) { layout.addView(View(this).apply { setBackgroundColor(Color.TRANSPARENT) }, LinearLayout.LayoutParams(1,height)) }
         val title = text("J A R V I S", 32f, Color.rgb(75,190,255), true)
         layout.addView(title)
         layout.addView(text("PERSONAL AI ASSISTANT", 12f, Color.rgb(150,190,225), true))
