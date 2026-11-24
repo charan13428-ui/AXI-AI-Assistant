@@ -12,7 +12,7 @@ import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
 import android.speech.RecognitionListener
 import android.speech.tts.TextToSpeech
-import android.view.Gravity
+import android.view.Gravity\nimport android.view.View
 import android.widget.*
 import android.graphics.Color
 import java.text.DateFormat
@@ -43,66 +43,58 @@ class MainActivity : Activity() {
 
         val layout = LinearLayout(this)
         layout.orientation = LinearLayout.VERTICAL
-        layout.gravity = Gravity.CENTER
-        layout.setPadding(32, 32, 32, 32)
-        layout.setBackgroundColor(Color.rgb(15, 15, 25))
+        layout.gravity = Gravity.CENTER_HORIZONTAL
+        layout.setPadding(24, 28, 24, 28)
+        layout.setBackgroundColor(Color.rgb(5, 9, 20))
 
-        val title = TextView(this).apply {
-            text = "JARVIS AI ASSISTANT"
-            textSize = 28f
-            setTextColor(Color.WHITE)
-            gravity = Gravity.CENTER
+        fun panel(color: Int, radius: Float = 28f): android.graphics.drawable.GradientDrawable {
+            return android.graphics.drawable.GradientDrawable().apply {
+                setColor(color); setCornerRadius(radius)
+                setStroke(2, Color.rgb(30, 120, 220))
+            }
         }
-
-        statusText = TextView(this).apply {
-            text = "Vanakkam! I am JARVIS."
-            textSize = 18f
-            setTextColor(Color.LTGRAY)
-            gravity = Gravity.CENTER
+        fun text(value: String, size: Float, color: Int, bold: Boolean = false): TextView {
+            return TextView(this).apply {
+                text=value; textSize=size; setTextColor(color); gravity=Gravity.CENTER
+                if (bold) setTypeface(null, android.graphics.Typeface.BOLD)
+                setPadding(12,12,12,12)
+            }
         }
-
-        resultText = TextView(this).apply {
-            text = "Tamil + English Voice Assistant"
-            textSize = 20f
-            setTextColor(Color.WHITE)
-            gravity = Gravity.CENTER
-        }
-
-        val tamilButton = Button(this).apply {
-            text = "தமிழ்"
-        }
-
-        val englishButton = Button(this).apply {
-            text = "English"
-        }
-
-        val micButton = Button(this).apply {
-            text = "🎤 Speak to JARVIS"
-        }
-
-        val speakButton = Button(this).apply {
-            text = "🔊 JARVIS Speak"
-        }
-
-        val backgroundStartButton = Button(this).apply {
-            text = "🎙️ Start Background Voice"
-        }
-
-        val backgroundStopButton = Button(this).apply {
-            text = "⏹ Stop Background Voice"
-        }
-
+        fun addGap(height: Int) { layout.addView(View(this).apply { setBackgroundColor(Color.TRANSPARENT }, LinearLayout.LayoutParams(1,height)) }
+        val title = text("J A R V I S", 32f, Color.rgb(75,190,255), true)
         layout.addView(title)
-        layout.addView(statusText)
-        layout.addView(resultText)
-        layout.addView(tamilButton)
-        layout.addView(englishButton)
-        layout.addView(micButton)
-        layout.addView(speakButton)
-        layout.addView(backgroundStartButton)
-        layout.addView(backgroundStopButton)
-
+        layout.addView(text("PERSONAL AI ASSISTANT", 12f, Color.rgb(150,190,225), true))
+        addGap(20)
+        statusText = text("SYSTEM ONLINE • READY", 16f, Color.rgb(120,255,180), true)
+        statusText.setBackground(panel(Color.rgb(12,25,44)))
+        layout.addView(statusText, LinearLayout.LayoutParams(-1,-2))
+        addGap(12)
+        resultText = text("Tamil + English\nSay hello to JARVIS", 20f, Color.WHITE, true)
+        resultText.setBackground(panel(Color.rgb(13,22,40)))
+        layout.addView(resultText, LinearLayout.LayoutParams(-1,-2))
+        addGap(18)
+        fun button(label: String, color: Int): Button = Button(this).apply {
+            text=label; setTextColor(Color.WHITE); textSize=15f
+            background=panel(color,40f); isAllCaps=false
+        }
+        val tamilButton=button("தமிழ்",Color.rgb(17,38,65))
+        val englishButton=button("ENGLISH",Color.rgb(17,38,65))
+        val micButton=button("🎙  TAP TO SPEAK",Color.rgb(8,70,125))
+        val speakButton=button("🔊  JARVIS VOICE",Color.rgb(20,45,80))
+        val backgroundStartButton=button("◉  START BACKGROUND VOICE",Color.rgb(15,80,70))
+        val backgroundStopButton=button("■  STOP BACKGROUND VOICE",Color.rgb(70,30,45))
+        layout.addView(tamilButton,LinearLayout.LayoutParams(-1,-2))
+        layout.addView(englishButton,LinearLayout.LayoutParams(-1,-2))
+        addGap(8)
+        layout.addView(micButton,LinearLayout.LayoutParams(-1,-2))
+        layout.addView(speakButton,LinearLayout.LayoutParams(-1,-2))
+        addGap(12)
+        layout.addView(backgroundStartButton,LinearLayout.LayoutParams(-1,-2))
+        layout.addView(backgroundStopButton,LinearLayout.LayoutParams(-1,-2))
+        addGap(16)
+        layout.addView(text("QUICK COMMANDS\n“Open YouTube” • “Time” • “Open Settings” • “Search…”",13f,Color.rgb(150,180,210)))
         val scrollView = ScrollView(this)
+        scrollView.setBackgroundColor(Color.rgb(5,9,20))
         scrollView.addView(layout)
         setContentView(scrollView)
 
