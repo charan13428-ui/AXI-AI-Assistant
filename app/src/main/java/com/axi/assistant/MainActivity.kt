@@ -48,14 +48,14 @@ class MainActivity : Activity() {
         layout.setBackgroundColor(Color.rgb(15, 15, 25))
 
         val title = TextView(this).apply {
-            text = "AXI AI ASSISTANT 🚀"
+            text = "JARVIS AI ASSISTANT"
             textSize = 28f
             setTextColor(Color.WHITE)
             gravity = Gravity.CENTER
         }
 
         statusText = TextView(this).apply {
-            text = "Vanakkam! I am AXI."
+            text = "Vanakkam! I am JARVIS."
             textSize = 18f
             setTextColor(Color.LTGRAY)
             gravity = Gravity.CENTER
@@ -77,11 +77,11 @@ class MainActivity : Activity() {
         }
 
         val micButton = Button(this).apply {
-            text = "🎤 Speak to AXI"
+            text = "🎤 Speak to JARVIS"
         }
 
         val speakButton = Button(this).apply {
-            text = "🔊 AXI Speak"
+            text = "🔊 JARVIS Speak"
         }
 
         val backgroundStartButton = Button(this).apply {
@@ -168,8 +168,8 @@ class MainActivity : Activity() {
                         } else {
                             statusText.text =
                                 if (selectedLocale.language == "ta")
-                                    "AXI பதிலளிக்கிறது..."
-                                else "AXI is responding..."
+                                    "JARVIS பதிலளிக்கிறது..."
+                                else "JARVIS is responding..."
 
                             handleCommand(spokenText)
                         }
@@ -197,14 +197,14 @@ class MainActivity : Activity() {
             selectedLocale = Locale("ta", "IN")
             updateTtsLanguage()
             statusText.text = "தமிழ் தேர்ந்தெடுக்கப்பட்டது"
-            speak("வணக்கம்! நான் AXI.")
+            speak("வணக்கம்! நான் JARVIS.")
         }
 
         englishButton.setOnClickListener {
             selectedLocale = Locale("en", "IN")
             updateTtsLanguage()
             statusText.text = "English selected"
-            speak("Hello! I am AXI.")
+            speak("Hello! I am JARVIS.")
         }
 
         micButton.setOnClickListener {
@@ -213,9 +213,9 @@ class MainActivity : Activity() {
 
         speakButton.setOnClickListener {
             if (selectedLocale.language == "ta") {
-                speak("வணக்கம்! நான் AXI. உங்களுக்கு எப்படி உதவலாம்?")
+                speak("வணக்கம்! நான் JARVIS. உங்களுக்கு எப்படி உதவலாம்?")
             } else {
-                speak("Hello! I am AXI. How can I help you?")
+                speak("Hello! I am JARVIS. How can I help you?")
             }
         }
 
@@ -283,8 +283,8 @@ class MainActivity : Activity() {
 
             statusText.text =
                 if (selectedLocale.language == "ta")
-                    "AXI பின்னணியில் தொடங்கப்பட்டது."
-                else "AXI background voice started."
+                    "JARVIS பின்னணியில் தொடங்கப்பட்டது."
+                else "JARVIS background voice started."
 
         } catch (_: Exception) {
             statusText.text =
@@ -300,8 +300,8 @@ class MainActivity : Activity() {
 
             statusText.text =
                 if (selectedLocale.language == "ta")
-                    "AXI பின்னணி குரல் நிறுத்தப்பட்டது."
-                else "AXI background voice stopped."
+                    "JARVIS பின்னணி குரல் நிறுத்தப்பட்டது."
+                else "JARVIS background voice stopped."
 
         } catch (_: Exception) {
             statusText.text = "Couldn't stop background voice."
@@ -386,9 +386,9 @@ class MainActivity : Activity() {
 
                 response =
                     if (isTamil)
-                        "என் பெயர் AXI. நான் உங்கள் தமிழ் மற்றும் ஆங்கில குரல் உதவியாளர்."
+                        "என் பெயர் JARVIS. நான் உங்கள் தமிழ் மற்றும் ஆங்கில குரல் உதவியாளர்."
                     else
-                        "My name is AXI. I am your Tamil and English voice assistant."
+                        "My name is JARVIS. I am your Tamil and English voice assistant."
             }
 
             text.contains("what can you do") ||
@@ -423,8 +423,8 @@ class MainActivity : Activity() {
         }
 
         statusText.text =
-            if (isTamil) "AXI பதிலளித்தது"
-            else "AXI replied"
+            if (isTamil) "JARVIS பதிலளித்தது"
+            else "JARVIS replied"
 
         speak(response)
     }
@@ -517,7 +517,7 @@ class MainActivity : Activity() {
                     launchBackgroundService()
                 } else {
                     statusText.text =
-                        "Notification permission is needed to start AXI background voice."
+                        "Notification permission is needed to start JARVIS background voice."
                 }
             }
         }
@@ -529,7 +529,7 @@ class MainActivity : Activity() {
                 message,
                 TextToSpeech.QUEUE_FLUSH,
                 null,
-                "AXI_SPEECH"
+                "JARVIS_SPEECH"
             )
         } else {
             statusText.text =
